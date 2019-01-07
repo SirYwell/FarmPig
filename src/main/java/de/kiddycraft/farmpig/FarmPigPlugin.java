@@ -10,11 +10,15 @@ import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
+import net.minecraft.server.v1_8_R3.EntityPlayer;
+import net.minecraft.server.v1_8_R3.IChatBaseComponent;
+import net.minecraft.server.v1_8_R3.PacketPlayOutChat;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
@@ -84,7 +88,18 @@ public class FarmPigPlugin extends JavaPlugin implements CommandExecutor {
 				return false;
 			
 			String subCmd = args[0];
-			switch (subCmd) {
+            EntityPlayer handle = ((CraftPlayer) sender).getHandle();
+            switch (subCmd) {
+                case "test":
+                    String textA = "[\"\",{\"text\":\"Test\",\"color\":\"dark_blue\",\"bold\":true,\"underlined\":true}]";
+                    String textB = "§r §l[§b*§r§l]§r §l§4Name:§r";
+                    IChatBaseComponent valid = IChatBaseComponent.ChatSerializer.a(textA);
+                    IChatBaseComponent hello = IChatBaseComponent.ChatSerializer.a(textB);
+                    valid.addSibling(hello);
+                    System.out.println(IChatBaseComponent.ChatSerializer.a(valid));
+                    System.out.println(IChatBaseComponent.ChatSerializer.a(hello));
+                    handle.playerConnection.sendPacket(new PacketPlayOutChat(valid));
+                    break;
 				case "list":
 					sender.sendMessage("§lThese are all §5farmpigs§r§l on this server");
 					for (var entry : instances.entrySet()) {
@@ -94,31 +109,41 @@ public class FarmPigPlugin extends JavaPlugin implements CommandExecutor {
 						// info
 						// TODO: replace with naked json https://minecraftjson.com/
 						ComponentBuilder builder = new ComponentBuilder("");
+						IChatBaseComponent start = IChatBaseComponent.ChatSerializer.a(" §l[§b*§r§l]§r §l§4Name:§r " + instance.getNameTag() + "§r, ");
 						// builder.append(TextComponent.fromLegacyText(" §l[§b*§r§l]§r §l§4Name:§r " + instance.getNameTag() + "§r, "));
 						
 						// add view option if permission is present
 						if (sender.hasPermission("kiddycraft.farmpig.view")) {
+						    IChatBaseComponent viewComponent = IChatBaseComponent.ChatSerializer.a("[\"\",{\"text\":\"[View]\",\"color\":\"green\",\"clickEvent\":{\"action\":\"run_command\",\"value\":\"/farmpig view " + uuid + "\"},\"hoverEvent\":{\"action\":\"show_text\",\"value\":{\"text\":\"\",\"extra\":[{\"text\":\"Teleports you to this farmpig's location\"}]}}}]");
+						    start.addSibling(viewComponent);
 							TextComponent view = new TextComponent("[View]");
 							view.setColor(net.md_5.bungee.api.ChatColor.GREEN);
 							view.setHoverEvent(
 									new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Teleports you to this farmpig's location").create()));
 							view.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/farmpig view " + uuid));
-							// builder.append(view);
+							//builder.append(view);
 						}
 						
 						builder.append(" ");
 						
 						// add remove option if permission is present
 						if (sender.hasPermission("kiddycraft.farmpig.remove")) {
+						    IChatBaseComponent removeComponent = IChatBaseComponent.ChatSerializer.a("[\"\",{\"text\":\"[Remove]\",\"color\":\"dark_red\",\"clickEvent\":{\"action\":\"run_command\",\"value\":\"/farmpig remove " + uuid + "\"},\"hoverEvent\":{\"action\":\"show_text\",\"value\":{\"text\":\"\",\"extra\":[{\"text\":\"Removes this farmpig from the game\"}]}}}]");
+						    start.addSibling(removeComponent);
 							TextComponent remove = new TextComponent("[Remove]");
 							remove.setColor(net.md_5.bungee.api.ChatColor.DARK_RED);
 							remove.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/farmpig remove " + uuid.toString()));
 							remove.setHoverEvent(
 									new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Removes this farmpig from the game").create()));
-							// builder.append(remove);
+							 //builder.append(remove);
 						}
 						
-						sender.spigot().sendMessage(builder.create());
+						//sender.spigot().sendMessage(builder.create());
+						// EntityPlayer handle = ((CraftPlayer) sender).getHandle();
+						// IChatBaseComponent valid = IChatBaseComponent.ChatSerializer.a("[\"\",{\"text\":\"Test\",\"color\":\"dark_blue\",\"bold\":true,\"underlined\":true}]");
+						// IChatBaseComponent hello = IChatBaseComponent.ChatSerializer.a(" §6Addition!");
+						// valid.addSibling(hello);
+						handle.playerConnection.sendPacket(new PacketPlayOutChat(start));
 					}
 					break;
 				case "add":
